@@ -1,51 +1,49 @@
 package islom.din.myapplication
 
 import android.os.Bundle
-import android.util.Log
+import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import kotlin.math.log
+import androidx.lifecycle.ViewModelProvider
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var textView: TextView
+    private lateinit var button: Button
+
+    private lateinit var viewModel: MainViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        Log.d("retrofit", "onCreate: ")
+        textView = findViewById(R.id.text_view)
+        button = findViewById(R.id.button)
 
-        //1)
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://random-data-api.com/api/v2/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+        setListeners()
+        observe()
+    }
 
-        //2)
-        val service: BankService = retrofit.create(BankService::class.java)
+    private fun setListeners() {
+        button.setOnClickListener {
+            viewModel.generateText()
+        }
+    }
 
-        //3)
-        val callback: Callback<Bank> = object : Callback<Bank> {
-            override fun onResponse(call: Call<Bank>, response: Response<Bank>) {
-                // еще не означает, что запрос успешный
-                if(response.isSuccessful) {
-                    // точно успешный
-                    val bank = response.body()
-                    Log.d("retrofit", "ID: ${bank?.id}")
-                    Log.d("retrofit", "UID: ${bank?.uid}")
-                    Log.d("retrofit", "Account number: ${bank?.accNum}")
-                }
+    private fun observe() {
+        with(viewModel) {
+            text.observe(this@MainActivity) { newString ->
+                textView.text = newString
             }
 
-            override fun onFailure(call: Call<Bank>, t: Throwable) {
-                Log.d("retrofit", "Failed -> ${t.message}")
+            secondsLiveData.observe(this@MainActivity) { newSecond ->
+                textView.text = newSecond
             }
         }
+    }
 
-        //4)
-        service.getBank().enqueue(callback)
-
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }
